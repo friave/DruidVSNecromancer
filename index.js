@@ -3,7 +3,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext('2d');  
 
 let playerId = sessionStorage.getItem('playerId');
-let playerType = sessionStorage.getItem('platerType');
+let playerType = sessionStorage.getItem('playerType');
 let gameId = sessionStorage.getItem('gameId');
 let HP = sessionStorage.getItem('HP');
 // const bg = new Image();
@@ -35,10 +35,14 @@ ctx.fillRect(0, 400, canvas.width, 200);
 let buttons= [];
 
 class Button {
-    constructor(text, fillColor, textColor){
+    constructor(text, fillColor, textColor, x, y, width, height){
         this.text = text;
         this.fillColor = fillColor;
         this.textColor = textColor;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
     }
 
     setPosition(x,y){
@@ -75,7 +79,9 @@ function connectToGame() {
         if (playerId && playerType && gameId){
             ws.send(translate_to_binary('reconnect',{playerId}));
         }
+        else{
         enterGameInfo();
+        };
     }
 
     ws.onmessage = (event) => {
@@ -85,17 +91,31 @@ function connectToGame() {
             sessionStorage.setItem('gameId', msg.gameId);
             sessionStorage.setItem('playerId', msg.playerId);
             sessionStorage.setItem('playerType', msg.playerType);
-            sessionStorage.setItem('HP', 20);
+            sessionStorage.setItem('HP', msg.HP);
+        }
 
-            console.log(sessionStorage.getItem('gameId'));
-            console.log(sessionStorage.getItem('playerId'));
-            console.log(sessionStorage.getItem('playerType'));
+        if (msg.type === 'start_game'){
             init();
         }
 
         if (msg.type === 'class_error'){
             alert(msg.msg);
-            chooseClass();
+            chooseClass(msg.gameId);
+        }
+
+        if (msg.type === 'reconnect'){
+            sessionStorage.setItem('gameId', msg.gameId);
+            sessionStorage.setItem('playerId', msg.playerId);
+            sessionStorage.setItem('playerType', msg.playerType);
+            if (playerType === 'd'){
+                sessionStorage.setItem('HP', msg.d_hp);
+            }
+            else{
+                sessionStorage.setItem('HP', msg.n_hp);
+            }
+            init();
+            changePlayerInfo('d', d_hp);
+            changePlayerInfo('n', n_hp);
         }
 
         if (msg.type === 'player_update'){
@@ -104,6 +124,10 @@ function connectToGame() {
 
         if (msg.type === 'game_over'){
             gameOver(msg.beaten);
+        }
+
+        if (msg.type === 'turn_error'){
+            alert(msg.msg);
         }
         console.log(msg);
     }
@@ -115,8 +139,10 @@ function enterGameInfo(){
 }
 
 function chooseClass(gameId){
-    while (playerType !== 'd' &&  playerType !== 'n'){
-        playerType = prompt('Would you like to play as druid(d) or necromancer(n)?');
+    playerType = prompt('Would you like to play as druid(d) or necromancer(n)?');
+
+    if (playerType !== 'd' &&  playerType !== 'n' ){
+        chooseClass(gameId)
     }
     ws.send(translate_to_binary('join', {gameId, playerType}));
 }
@@ -144,11 +170,15 @@ function gameOver(beaten){
     ctx.fillStyle = '#198238';
     ctx.fillRect(0, 400, canvas.width, 200);
 
-    b1.onClick = () => void(0);
-    b2.onClick = () => void(0);
-    b3.onClick = () => void(0);
-    b4.onClick = () => void(0);
-    
+    buttons.forEach(button => button.onClick = () => void(0));
+
+    ctx.fillStyle = '#000000';
+    ctx.font = "25px Arial";
+    if (beaten === 'd'){
+        ctx.fillText("Necromancer is a winner!", 395, 270);
+    }else{
+        ctx.fillText("Druid is a winner!", 400, 270);
+    }
 }
 
 function init(){
@@ -158,34 +188,22 @@ function init(){
     ctx.fillStyle = '#3D3D3D';
     ctx.fillRect(570,180, 150, 220);
 
-    let startGame = new Button('Start Game', '#eeaa00', '#001122');
-    startGame.setPosition(canvas.width / 2 - 100, 150);
-    startGame.setSize(200, 75);
+    let b1;
+    let b2 = new Button('(place holder)', "#7A0000", "#FFFFFF", 230, 465, 150,80);
+    let b3 = new Button('(place holder)', "#7A0000", "#FFFFFF", 419, 465, 150,80);
+    let b4 = new Button('(place holder)', "#7A0000", "#FFFFFF", 608, 465, 150,80);
 
-    startGame.onClick = () => console.log('Start Game!');
-
-
-    let b1 = new Button('atak 1', "#7A0000", "#FFFFFF");
-    let b2 = new Button('atak 2', "#7A0000", "#FFFFFF");
-    let b3 = new Button('atak 3', "#7A0000", "#FFFFFF");
-    let b4 = new Button('obrona', "#7A0000", "#FFFFFF");
-
-    b1.setPosition(41,465);+9+
-    b2.setPosition(230,465);
-    b3.setPosition(419,465);
-    b4.setPosition(608,465);
-
-    b1.setSize(150,80);
-    b2.setSize(150,80);
-    b3.setSize(150,80);
-    b4.setSize(150,80);
+    if (playerType === 'd'){
+        b1 = new Button('Vine whip', "#7A0000", "#FFFFFF", 41, 465, 150,80);
+    }else{
+        b1 = new Button('Leech Life', "#7A0000", "#FFFFFF", 41, 465, 150,80);
+    }
 
     b1.onClick = () => ws.send(translate_to_binary("action", {action: 1}));
     b2.onClick = () => ws.send(translate_to_binary("action", {action: 2}));
     b3.onClick = () => ws.send(translate_to_binary("action", {action: 3}));
     b4.onClick = () => ws.send(translate_to_binary("action", {action: 4}));
 
-    buttons.push(startGame);
     buttons.push(b1);
     buttons.push(b2);
     buttons.push(b3);
@@ -198,20 +216,8 @@ function init(){
     ctx.font = "18px Arial";
     ctx.fillText("HP:"+20, 20, 70);
     ctx.fillText("HP:"+20, 650, 70);
-
-    update();
-    //zeby zmieniać HP trzeba rysowac rect nieba na tekscie HP, bo litery to tak naprawde obrazki liter
-
-}
-
-
-function update(){
-    // ctx.fillStyle = "#000000";
-    // ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     buttons.forEach(button => button.draw(ctx));
 
-    requestAnimationFrame(update);
 }
 
 canvas.addEventListener('click', (event) => {
@@ -248,7 +254,7 @@ function translate_to_binary(type, msg) {
         return buffer;
     }
     if (type === 'reconnect'){
-        const temp_playerId = msg.platerId;
+        const temp_playerId = msg.playerId;
         const playerIdLen =  temp_playerId.length;
         const buffer = new ArrayBuffer(1 + playerIdLen);
         const view = new Uint8Array(buffer);
@@ -290,8 +296,10 @@ function translate_to_text(bin_msg) {
     const type = bin_msg[0]
 
     if (type === 1){
-        const msg = String.fromCharCode(...bin_msg.slice(1));
-        return { type: 'class_error', msg };
+        const gameIdLen = bin_msg[1];
+        const gameId = String.fromCharCode(...bin_msg.slice(2, 2 + gameIdLen));
+        const msg = String.fromCharCode(...bin_msg.slice(2+gameIdLen));
+        return { type: 'class_error', msg, gameId };
     }
     if (type === 2){
         const gameIdLen = bin_msg[1];
@@ -300,17 +308,42 @@ function translate_to_text(bin_msg) {
         var offset = 3 + gameIdLen;
         playerId = String.fromCharCode(...bin_msg.slice(offset, offset + playerIdLen));
         playerType = String.fromCharCode(bin_msg[offset + playerIdLen]);
-        return { type: 'game_info', gameId, playerId, playerType };
+        HP = bin_msg[1 + offset + playerIdLen]
+        return { type: 'game_info', gameId, playerId, playerType, HP};
     }
     if (type === 3){
         const attackedPlayer =  String.fromCharCode(bin_msg[1]);
         const HP = bin_msg[2];
         return { type: 'player_update', 'attackedPlayer': attackedPlayer, 'HP': HP};
     }
-
+    
     if (type === 4){
         return { type: 'game_over', 'beaten': String.fromCharCode(bin_msg[1])};
     }
+
+    if (type === 5){
+        const msg = String.fromCharCode(...bin_msg.slice(1));
+        return {type: 'start_game', msg};
+    }
+
+    if (type === 6){
+        const gameIdLen = bin_msg[1];
+        gameId = String.fromCharCode(...bin_msg.slice(2, 2 + gameIdLen));
+        const playerIdLen = bin_msg[2 + gameIdLen];
+        var offset = 3 + gameIdLen;
+        playerId = String.fromCharCode(...bin_msg.slice(offset, offset + playerIdLen));
+        playerType = String.fromCharCode(bin_msg[offset + playerIdLen]);
+        d_hp = bin_msg[1 + offset + playerIdLen];
+        n_hp = bin_msg[2 + offset + playerIdLen];
+        return { type: 'reconnect', gameId, playerId, playerType, d_hp, n_hp};
+    }
+
+    if (type === 7){
+        const msg = String.fromCharCode(...bin_msg.slice(1));
+        console.log(msg);
+        return {type: 'turn_error', msg};
+    }
+    
 
 
     // const l = bin_msg[0];
