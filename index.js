@@ -80,7 +80,7 @@ function connectToGame() {
             ws.send(translate_to_binary('reconnect',{playerId}));
         }
         else{
-        enterGameInfo();
+            enterGameInfo();
         };
     }
 
