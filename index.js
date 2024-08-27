@@ -6,26 +6,31 @@ let playerId = sessionStorage.getItem('playerId');
 let playerType = sessionStorage.getItem('playerType');
 let gameId = sessionStorage.getItem('gameId');
 let HP = sessionStorage.getItem('HP');
-// const bg = new Image();
-// bg.src = "./bg.png";
-// bg.onload = function() {
-//     ctx.drawImage(bg, 0,0);
-// };
 
-// const druid = new Image();
-// druid.src = "./druid.png";
-// druid.onload = function() {
-//     ctx.drawImage(druid,50,150);
-// };
+/*
+//INPUT IMAGES
 
-// const necro = new Image();
-// necro.src = "./necromancer.png";
-// necro.onload = function() {
-//     ctx.drawImage(necro, 570,150);
-// };
-// ctx.fillStyle = '#000000';
-// ctx.font = "48px Arial";
-// ctx.fillText("Waiting for other player", 150, 100);
+const bg = new Image();
+bg.src = "./bg.png";
+bg.onload = function() {
+    ctx.drawImage(bg, 0,0);
+};
+
+const druid = new Image();
+druid.src = "./druid.png";
+druid.onload = function() {
+    ctx.drawImage(druid,50,150);
+};
+
+const necro = new Image();
+necro.src = "./necromancer.png";
+necro.onload = function() {
+    ctx.drawImage(necro, 570,150);
+};
+ctx.fillStyle = '#000000';
+ctx.font = "48px Arial";
+ctx.fillText("Waiting for other player", 150, 100);
+*/
 
 ctx.fillStyle = '#4DBFFD'; //sky
 ctx.fillRect(0, 0, canvas.width, 400);
@@ -231,8 +236,8 @@ canvas.addEventListener('click', (event) => {
 
 function translate_to_binary(type, msg) {
     if (type === 'join'){
-        temp_gameId = msg.gameId;
-        temp_playerType = msg.playerType.charCodeAt(0);
+        let temp_gameId = msg.gameId;
+        let temp_playerType = msg.playerType.charCodeAt(0);
         let buffer;
         let view;
         if (temp_gameId === null){
@@ -340,15 +345,8 @@ function translate_to_text(bin_msg) {
 
     if (type === 7){
         const msg = String.fromCharCode(...bin_msg.slice(1));
-        console.log(msg);
         return {type: 'turn_error', msg};
     }
-    
-
-
-    // const l = bin_msg[0];
-    // const msg = String.fromCharCode(...bin_msg.slice(1,1+l));
-    // return msg;
 }
 
 

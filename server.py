@@ -1,6 +1,5 @@
 import websockets
 import asyncio
-import traceback
 import random
 from concurrent.futures import TimeoutError as ConnectionTimeoutError
 
@@ -57,16 +56,13 @@ async def handle_message(websocket):
                 await websocket.send(translate_to_binary("class_error", {"gameId": gameId, "message": "This class of character is already taken"}))
             else:
                 playerId = f'{playerType}-{gameId}'
-                print(playerId)
                 clients[playerId] = websocket
                 games[gameId]['websockets'][websocket] = playerType
                 games[gameId]['players'][playerType] = [20] #HP
                 
+                print("GAMES")
                 print(games)
-                print(clients)
 
-                print("Ile graczy w jednej grze "+str(len(games[gameId]['websockets'].keys())))
-            
                 await websocket.send(translate_to_binary("game_info", {'gameId': gameId, 'playerId': playerId, 'playerType': playerType, 'HP': 20}))
 
                 if len(games[gameId]['websockets'].keys()) == 2:
@@ -86,7 +82,8 @@ async def handle_message(websocket):
                         break
                 games[gameId]['websockets'][websocket] = playerType 
 
-                await websocket.send(translate_to_binary('reconnect', {'gameId':gameId, 'playerId': playerId, 'playerType': playerType, 'd_hp': games[gameId]['players']['d'][0], 'n_hp': games[gameId]['players']['n'][0]}))        
+                await websocket.send(translate_to_binary('reconnect', {'gameId':gameId, 'playerId': playerId, 'playerType': playerType, 
+                                                                       'd_hp': games[gameId]['players']['d'][0], 'n_hp': games[gameId]['players']['n'][0]}))        
 
         elif data['type'] == 'action':
             playerId = data['playerId']
@@ -107,10 +104,6 @@ async def handle_message(websocket):
                                 for ws in games[gameId]['websockets'].keys():
                                     await ws.send(translate_to_binary('player_update', {"playerType": 'n', 'HP': games[gameId]['players']['n'][0]}))
 
-                        case 2:
-                            print('2')
-                        case _:
-                            print('not one or two')
                     games[gameId]['turn'] = 'n'
                 else:
                     match action:
@@ -124,14 +117,10 @@ async def handle_message(websocket):
                                 for ws in games[gameId]['websockets'].keys():
                                     await ws.send(translate_to_binary('player_update', {"playerType": 'd', 'HP': games[gameId]['players']['d'][0]}))
 
-                        case 2:
-                            print('2')
-                        case _:
-                            print('not one or two')
                     games[gameId]['turn'] = 'd'
 
             else:
-                print("Turn error")
+                print("TURN ERROR")
                 await websocket.send(translate_to_binary('turn_error', {'message': "It's not your turn"}))
 
 
@@ -164,7 +153,7 @@ def translate_to_binary(type, info):
 
         buffer.append(ord(info['playerType']))
         buffer.append(info['HP'])
-        print('game_info')
+        print('GAME INFO')
         print(buffer)
         return bytes(buffer)           
 
@@ -209,8 +198,6 @@ def translate_to_binary(type, info):
 
 def translate_to_text(bin_msg):
     type = bin_msg[0]
-    print(bin_msg)
-    print(type)
     if type == 1:
         playerType = chr(bin_msg[1])
         gameIdLen = bin_msg[2]
@@ -229,9 +216,6 @@ def translate_to_text(bin_msg):
         action = bin_msg[1]
         playerId = bin_msg[2:].decode('utf-8')
         return {'type':'action', 'playerId': playerId, 'action': action}
-
-
-
     
 async def main():
     async with websockets.serve(handle_message, "localhost", 5555):
