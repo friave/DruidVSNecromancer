@@ -139,7 +139,8 @@ function connectToGame() {
 }
 
 function enterGameInfo(){
-    gameId = prompt('Do you have name of the game you want to join? Leave empty if you want to play random game');
+    // gameId = prompt('Do you have name of the game you want to join? Leave empty if you want to play random game');
+    gameId = prompt('Enter name of your game');
     chooseClass(gameId);
 }
 
