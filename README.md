@@ -8,3 +8,5 @@ GUI made with canvas, server in python.
 To run the aplication you need to install [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
 
 Now run in terminal server in python and click on "Go Live" in bottom right corner in VS Code, it should open new tab in the browser.
+
+You need two players/two tabs with the same name of the game to start the battle.
